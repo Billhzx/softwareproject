@@ -61,7 +61,7 @@ public class DynamicProgrammingSolver {
                 double weight = itemSet.getItem(itemIndex).getWeight();
                 double value = itemSet.getItem(itemIndex).getValue();
 
-                selectedItems.add(new SelectedItem
+                selectedItems.add(new SelectedItem(
                         itemSet.getId(),
                         itemIndex,
                         weight,
