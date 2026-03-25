@@ -156,17 +156,27 @@ public class IdkpDataFileReader {
     public static void main(String[] args) {
         try {
             IdkpDataFileReader reader = new IdkpDataFileReader();
-            String filePath = "Four kinds of D{0-1}KP instances/idkp1-10.txt";
-            List<KnapsackProblem> problems = reader.readIdkpFile(filePath);
             
-            System.out.println("成功读取 " + problems.size() + " 个实例");
-            for (int i = 0; i < problems.size(); i++) {
-                KnapsackProblem problem = problems.get(i);
-                System.out.println("实例 " + (i + 1) + ":");
-                System.out.println("  容量: " + problem.getCapacity());
-                System.out.println("  项集数量: " + problem.getItemCount());
-                System.out.println();
-            }
+            // 测试IDKP格式
+            String idkpPath = "Four kinds of D{0-1}KP instances/idkp1-10.txt";
+            List<KnapsackProblem> idkpProblems = reader.readIdkpFile(idkpPath);
+            System.out.println("IDKP文件: 成功读取 " + idkpProblems.size() + " 个实例");
+            
+            // 测试SDKP格式
+            String sdkpPath = "Four kinds of D{0-1}KP instances/sdkp1-10.txt";
+            List<KnapsackProblem> sdkpProblems = reader.readIdkpFile(sdkpPath);
+            System.out.println("SDKP文件: 成功读取 " + sdkpProblems.size() + " 个实例");
+            
+            // 测试UDKP格式
+            String udkpPath = "Four kinds of D{0-1}KP instances/udkp1-10.txt";
+            List<KnapsackProblem> udkpProblems = reader.readIdkpFile(udkpPath);
+            System.out.println("UDKP文件: 成功读取 " + udkpProblems.size() + " 个实例");
+            
+            // 测试WDKP格式
+            String wdkpPath = "Four kinds of D{0-1}KP instances/wdkp1-10.txt";
+            List<KnapsackProblem> wdkpProblems = reader.readIdkpFile(wdkpPath);
+            System.out.println("WDKP文件: 成功读取 " + wdkpProblems.size() + " 个实例");
+            
         } catch (Exception e) {
             e.printStackTrace();
         }
