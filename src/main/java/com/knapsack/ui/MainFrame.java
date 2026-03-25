@@ -2,6 +2,7 @@ package com.knapsack.ui;
 
 import com.knapsack.algorithm.DynamicProgrammingSolver;
 import com.knapsack.io.DataFileReader;
+import com.knapsack.io.IdkpDataFileReader;
 import com.knapsack.io.ResultExporter;
 import com.knapsack.model.ItemSet;
 import com.knapsack.model.KnapsackProblem;
@@ -167,13 +168,60 @@ public class MainFrame extends JFrame {
         if (result == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
             try {
+                // 首先尝试使用标准格式读取
                 DataFileReader reader = new DataFileReader();
                 currentProblem = reader.readFile(file.getAbsolutePath());
                 updateDataDisplay();
                 JOptionPane.showMessageDialog(this, "数据文件加载成功！", "成功", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "加载数据文件失败: " + ex.getMessage(), 
-                        "错误", JOptionPane.ERROR_MESSAGE);
+                // 如果标准格式读取失败，尝试IDKP格式
+                try {
+                    IdkpDataFileReader idkpReader = new IdkpDataFileReader();
+                    java.util.List<KnapsackProblem> problems = idkpReader.readIdkpFile(file.getAbsolutePath());
+                    
+                    if (problems.isEmpty()) {
+                        JOptionPane.showMessageDialog(this, "文件中没有找到有效的D{0-1}KP实例", 
+                                "错误", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    
+                    // 如果有多个实例，让用户选择
+                    if (problems.size() > 1) {
+                        String[] options = new String[problems.size()];
+                        for (int i = 0; i < problems.size(); i++) {
+                            options[i] = "实例 " + (i + 1) + " (容量: " + problems.get(i).getCapacity() + ", 项集: " + problems.get(i).getItemCount() + ")";
+                        }
+                        
+                        String selected = (String) JOptionPane.showInputDialog(this, 
+                                "文件中包含多个实例，请选择要加载的实例：",
+                                "选择实例",
+                                JOptionPane.QUESTION_MESSAGE,
+                                null,
+                                options,
+                                options[0]);
+                        
+                        if (selected != null) {
+                            int selectedIndex = 0;
+                            for (int i = 0; i < options.length; i++) {
+                                if (options[i].equals(selected)) {
+                                    selectedIndex = i;
+                                    break;
+                                }
+                            }
+                            currentProblem = problems.get(selectedIndex);
+                        } else {
+                            return; // 用户取消选择
+                        }
+                    } else {
+                        currentProblem = problems.get(0);
+                    }
+                    
+                    updateDataDisplay();
+                    JOptionPane.showMessageDialog(this, "IDKP数据文件加载成功！\n共读取 " + problems.size() + " 个实例", "成功", JOptionPane.INFORMATION_MESSAGE);
+                } catch (Exception ex2) {
+                    JOptionPane.showMessageDialog(this, "加载数据文件失败: " + ex.getMessage(), 
+                            "错误", JOptionPane.ERROR_MESSAGE);
+                }
             }
         }
     }
