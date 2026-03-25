@@ -3,8 +3,10 @@ package com.knapsack.io;
 import com.knapsack.model.SolutionResult;
 
 import java.io.BufferedWriter;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -12,7 +14,7 @@ public class ResultExporter {
     private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
     public void exportToTxt(String filePath, SolutionResult result) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+        try (Writer writer = new OutputStreamWriter(new FileOutputStream(filePath), "UTF-8")) {
             SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
             writer.write("========================================\n");
             writer.write("D{0-1}背包问题求解结果\n");
@@ -42,7 +44,7 @@ public class ResultExporter {
     }
 
     public void exportToCsv(String filePath, SolutionResult result) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+        try (Writer writer = new OutputStreamWriter(new FileOutputStream(filePath), "UTF-8")) {
             SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
             writer.write("导出时间," + sdf.format(new Date()) + "\n");
             writer.write("算法," + result.getAlgorithm() + "\n");
