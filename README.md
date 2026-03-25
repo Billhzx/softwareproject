@@ -104,7 +104,7 @@ java -cp bin com.knapsack.KnapsackTest
 
 ## 代码规范
 
-本项目严格遵循《阿里巴巴Java开发手册》和《腾讯C++编码规范》，详见 [代码规范说明.md](docs/代码规范说明.md)
+本项目严格遵循《阿里巴巴Java开发手册》，详见 [代码规范说明.md](docs/代码规范说明.md)
 
 ## 技术栈
 
