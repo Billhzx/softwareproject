@@ -114,8 +114,4 @@ java -cp bin com.knapsack.KnapsackTest
 
 ## 作者
 
-软件工程实验项目
-
-## 许可证
-
-本项目仅用于教学目的
+Billhzx
