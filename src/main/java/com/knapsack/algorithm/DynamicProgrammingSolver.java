@@ -54,7 +54,7 @@ public class DynamicProgrammingSolver {
         int currentWeight = intCapacity;
         List<SelectedItem> selectedItems = new ArrayList<>();
 
-        for (int i = n; i > 0; i--) {
+        for (int i = n; i > 0; i--) 
             if (choice[i][currentWeight][0] == 1) {
                 int itemIndex = choice[i][currentWeight][1];
                 ItemSet itemSet = itemSets.get(i - 1);
