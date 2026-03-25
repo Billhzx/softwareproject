@@ -280,23 +280,27 @@ public class MainFrame extends JFrame {
         }
 
         try {
-            // 使用用户目录作为保存位置
-            String userHome = System.getProperty("user.home");
-            String saveDirPath = userHome + File.separator + "Documents" + File.separator + "KnapsackResults";
-            File saveDir = new File(saveDirPath);
+            // 尝试多个可能的保存位置
+            String[] possibleDirs = new String[]{
+                System.getProperty("user.home") + File.separator + "Downloads",
+                System.getProperty("user.home") + File.separator + "Desktop",
+                System.getProperty("user.home"),
+                System.getProperty("java.io.tmpdir")
+            };
             
-            // 确保保存目录存在
-            if (!saveDir.exists()) {
-                if (!saveDir.mkdirs()) {
-                    // 如果Documents目录也有问题，尝试使用用户主目录
-                    saveDirPath = userHome + File.separator + "KnapsackResults";
-                    saveDir = new File(saveDirPath);
-                    if (!saveDir.exists() && !saveDir.mkdirs()) {
-                        // 最后尝试使用临时目录
-                        saveDirPath = System.getProperty("java.io.tmpdir");
-                        saveDir = new File(saveDirPath);
-                    }
+            File saveDir = null;
+            for (String dirPath : possibleDirs) {
+                File dir = new File(dirPath);
+                if (dir.exists() && dir.isDirectory() && dir.canWrite()) {
+                    saveDir = dir;
+                    break;
                 }
+            }
+            
+            if (saveDir == null) {
+                JOptionPane.showMessageDialog(this, "无法找到可写入的目录，请检查系统权限", 
+                        "错误", JOptionPane.ERROR_MESSAGE);
+                return;
             }
 
             // 生成默认文件名
@@ -323,24 +327,39 @@ public class MainFrame extends JFrame {
                         }
                     }
                     
+                    // 检查文件是否可写
+                    if (file.exists() && !file.canWrite()) {
+                        JOptionPane.showMessageDialog(this, "文件已存在且无法写入，请选择其他文件名", 
+                                "错误", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    
                     // 尝试使用不同的文件写入方式
                     boolean success = false;
                     try {
-                        ResultExporter exporter = new ResultExporter();
+                        // 直接写入文件
+                        StringBuilder content = new StringBuilder();
                         if (format.equals("txt")) {
-                            exporter.exportToTxt(file.getAbsolutePath(), currentResult);
+                            buildTxtContent(content, currentResult);
                         } else if (format.equals("csv")) {
-                            exporter.exportToCsv(file.getAbsolutePath(), currentResult);
+                            buildCsvContent(content, currentResult);
+                        }
+                        
+                        // 使用FileOutputStream写入
+                        try (java.io.FileOutputStream fos = new java.io.FileOutputStream(file)) {
+                            fos.write(content.toString().getBytes("UTF-8"));
                         }
                         success = true;
                     } catch (Exception e) {
-                        // 如果失败，尝试使用绝对路径
-                        String absolutePath = file.getAbsolutePath();
-                        ResultExporter exporter = new ResultExporter();
-                        if (format.equals("txt")) {
-                            exporter.exportToTxt(absolutePath, currentResult);
-                        } else if (format.equals("csv")) {
-                            exporter.exportToCsv(absolutePath, currentResult);
+                        // 如果失败，尝试使用RandomAccessFile
+                        try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(file, "rw")) {
+                            StringBuilder content = new StringBuilder();
+                            if (format.equals("txt")) {
+                                buildTxtContent(content, currentResult);
+                            } else if (format.equals("csv")) {
+                                buildCsvContent(content, currentResult);
+                            }
+                            raf.writeBytes(content.toString());
                         }
                         success = true;
                     }
@@ -353,14 +372,90 @@ public class MainFrame extends JFrame {
                     JOptionPane.showMessageDialog(this, "权限不足，无法写入文件: " + ex.getMessage() + "\n请尝试以管理员身份运行程序", 
                             "错误", JOptionPane.ERROR_MESSAGE);
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(this, "导出失败: " + ex.getMessage() + "\n错误详情: " + ex.getStackTrace()[0], 
-                            "错误", JOptionPane.ERROR_MESSAGE);
+                    // 显示详细错误信息
+                    StringBuilder errorMsg = new StringBuilder();
+                    errorMsg.append("导出失败: " + ex.getMessage() + "\n");
+                    errorMsg.append("文件路径: " + file.getAbsolutePath() + "\n");
+                    errorMsg.append("目录是否存在: " + file.getParentFile().exists() + "\n");
+                    errorMsg.append("目录是否可写: " + file.getParentFile().canWrite() + "\n");
+                    errorMsg.append("文件是否存在: " + file.exists() + "\n");
+                    errorMsg.append("错误详情: " + ex.getStackTrace()[0] + "\n");
+                    
+                    // 显示备选方案
+                    int option = JOptionPane.showConfirmDialog(this, 
+                            errorMsg.toString() + "\n是否显示结果内容以便手动复制？", 
+                            "错误", JOptionPane.YES_NO_OPTION);
+                    
+                    if (option == JOptionPane.YES_OPTION) {
+                        showResultContent(format, currentResult);
+                    }
                 }
             }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "导出初始化失败: " + ex.getMessage(), 
                     "错误", JOptionPane.ERROR_MESSAGE);
         }
+    }
+    
+    private void buildTxtContent(StringBuilder content, SolutionResult result) {
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        content.append("========================================\n");
+        content.append("D{0-1}背包问题求解结果\n");
+        content.append("========================================\n");
+        content.append("导出时间: " + sdf.format(new java.util.Date()) + "\n");
+        content.append("算法: " + result.getAlgorithm() + "\n");
+        content.append("求解时间: " + result.getSolveTime() + " ms\n");
+        content.append("总价值: " + String.format("%.2f", result.getTotalValue()) + "\n");
+        content.append("总重量: " + String.format("%.2f", result.getTotalWeight()) + "\n");
+        content.append("========================================\n");
+        content.append("选中物品详情:\n");
+        content.append("----------------------------------------\n");
+        content.append(String.format("%-10s %-10s %-10s %-10s\n", "项集ID", "物品索引", "重量", "价值"));
+        content.append("----------------------------------------\n");
+
+        for (var item : result.getSelectedItems()) {
+            content.append(String.format("%-10d %-10d %-10.2f %-10.2f\n",
+                    item.getItemSetId(), item.getItemIndex(),
+                    item.getWeight(), item.getValue()));
+        }
+
+        content.append("========================================\n");
+        content.append("共选中 " + result.getSelectedItems().size() + " 个物品\n");
+        content.append("========================================\n");
+    }
+    
+    private void buildCsvContent(StringBuilder content, SolutionResult result) {
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        content.append("导出时间," + sdf.format(new java.util.Date()) + "\n");
+        content.append("算法," + result.getAlgorithm() + "\n");
+        content.append("求解时间(ms)," + result.getSolveTime() + "\n");
+        content.append("总价值," + String.format("%.2f", result.getTotalValue()) + "\n");
+        content.append("总重量," + String.format("%.2f", result.getTotalWeight()) + "\n");
+        content.append("\n");
+        content.append("项集ID,物品索引,重量,价值\n");
+
+        for (var item : result.getSelectedItems()) {
+            content.append(String.format("%d,%d,%.2f,%.2f\n",
+                    item.getItemSetId(), item.getItemIndex(),
+                    item.getWeight(), item.getValue()));
+        }
+    }
+    
+    private void showResultContent(String format, SolutionResult result) {
+        StringBuilder content = new StringBuilder();
+        if (format.equals("txt")) {
+            buildTxtContent(content, result);
+        } else if (format.equals("csv")) {
+            buildCsvContent(content, result);
+        }
+        
+        JTextArea textArea = new JTextArea(content.toString());
+        textArea.setEditable(false);
+        textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setPreferredSize(new Dimension(600, 400));
+        
+        JOptionPane.showMessageDialog(this, scrollPane, "求解结果（请复制）", JOptionPane.INFORMATION_MESSAGE);
     }
 
     public static void main(String[] args) {
