@@ -425,6 +425,9 @@ public class MainFrame extends JFrame {
     }
     
     private void buildCsvContent(StringBuilder content, SolutionResult result) {
+        // 添加UTF-8 BOM标记，帮助Excel正确识别编码
+        content.append("\ufeff");
+        
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         content.append("导出时间," + sdf.format(new java.util.Date()) + "\n");
         content.append("算法," + result.getAlgorithm() + "\n");
