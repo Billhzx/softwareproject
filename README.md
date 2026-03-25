@@ -85,8 +85,6 @@ java -cp bin com.knapsack.KnapsackTest
 
 ### 方式三：使用Eclipse IDE
 
-详细说明请参考 [Eclipse使用指南.md](docs/Eclipse使用指南.md)
-
 **快速步骤：**
 1. 在Eclipse中导入项目：`File` → `Import` → `Existing Projects into Workspace`
 2. 选择项目目录：`F:\softwareproject`
